@@ -126,20 +126,20 @@ def create_appointment():
 
 
 
-@app.route("/appointments/<int:id>", metheds=["DELETE"])
+@app.route("/appointments/<int:id>", methods=["DELETE"])
 @jwt_required()
 def delete_appointment(id):
-    User_id = get_jwt_identity()
+    user_id = get_jwt_identity()
 
-    appointment = Appointment.query.filter_by(id=id, User_id=User_id).first()
+    appointment = Appointment.query.filter_by(id=id, user_id=user_id).first()
     
     if not appointment:
-        return jsonify({"message": "Appointment not found or unauthorized."}), 404
+        return jsonify({"message": "Appointment not found."}), 404
     
     db.session.delete(appointment)
     db.session.commit()
 
-    return josinfy({"message": "Appointment cancelled successfully."}),200
+    return jsonify({"message": "Appointment cancelled successfully."}), 200
 
 
 
