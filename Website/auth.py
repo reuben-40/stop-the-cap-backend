@@ -1,16 +1,42 @@
+import traceback
 from flask import Blueprint, jsonify, request
+from flask_mail import Message
 from werkzeug.security import check_password_hash, generate_password_hash
 from flask_jwt_extended import (
-    JWTManager,
     create_access_token,
     create_refresh_token,
     jwt_required,
     get_jwt_identity,
 )
 from .models import User, Appointment
-from . import db
+from . import db, mail  # ✅ import mail from __init__.py
 
 auth = Blueprint("auth", __name__)
+
+
+# ── helpers ───────────────────────────────────────────────────────────────────
+
+def send_appointment_email(client_email, client_name, date, day, time):
+    subject = "Your Virtual Appointment Confirmation – Samba Health Outreach"
+    body = f"""
+Hello {client_name},
+
+Your virtual appointment has been successfully booked! Here are your details:
+
+  Date : {date}
+  Day  : {day}
+  Time : {time}
+
+The link to your virtual meeting will be shared with you on the day of the appointment.
+If you need to reschedule or cancel, please make the changes before the day of the appointment.
+
+Thank you for choosing our services!
+
+Best regards,
+Samba Health Outreach
+"""
+    msg = Message(subject=subject, recipients=[client_email], body=body)
+    mail.send(msg)
 
 
 # ── auth routes ───────────────────────────────────────────────────────────────
@@ -91,12 +117,9 @@ def login():
 
 @auth.route("/api/logout", methods=["POST"])
 def logout():
-    # Stateless — the client simply discards both tokens.
-    # Add a blocklist here if you need server-side revocation.
     return jsonify({"status": "Logged out successfully"}), 200
 
 
-# Generates a new access token using the refresh token
 @auth.route("/api/refresh", methods=["POST"])
 @jwt_required(refresh=True)
 def refresh():
@@ -105,7 +128,7 @@ def refresh():
     return jsonify({"access_token": access_token}), 200
 
 
-# ── protected routes ──────────────────────────────────────────────────────────
+# ── appointment routes ────────────────────────────────────────────────────────
 
 @auth.route("/appointments", methods=["POST"])
 @jwt_required()
@@ -116,6 +139,7 @@ def create_appointment():
         return jsonify({"message": "Please fill all fields"}), 400
 
     user_id = int(get_jwt_identity())
+    user    = User.query.get(user_id)
 
     new_appointment = Appointment(
         date=data["date"],
@@ -126,7 +150,29 @@ def create_appointment():
     db.session.add(new_appointment)
     db.session.commit()
 
-    return jsonify({"message": "Appointment booked successfully"}), 201
+    # ✅ Send confirmation email
+    email_sent = False
+    if user:
+        try:
+            send_appointment_email(
+                client_email=user.email,
+                client_name=user.first_name,
+                date=data["date"],
+                day=data["day"],
+                time=data["time"]
+            )
+            email_sent = True
+            print(f"✅ Email sent successfully to {user.email}")
+        except Exception as e:
+            print(f"❌ Email error: {e}")
+            traceback.print_exc()
+    else:
+        print(f"❌ No user found for id: {user_id}")
+
+    return jsonify({
+        "message": "Appointment booked successfully",
+        "email_sent": email_sent
+    }), 201
 
 
 @auth.route("/appointments", methods=["GET"])
@@ -150,6 +196,23 @@ def get_appointments():
         for a in appointments
     ]), 200
 
+
+@auth.route("/appointments/<int:id>", methods=["DELETE"])
+@jwt_required()
+def delete_appointment(id):
+    user_id     = int(get_jwt_identity())
+    appointment = Appointment.query.filter_by(id=id, user_id=user_id).first()
+
+    if not appointment:
+        return jsonify({"message": "Appointment not found."}), 404
+
+    db.session.delete(appointment)
+    db.session.commit()
+
+    return jsonify({"message": "Appointment cancelled successfully."}), 200
+
+
+# ── me ────────────────────────────────────────────────────────────────────────
 
 @auth.route("/api/me", methods=["GET"])
 @jwt_required()
