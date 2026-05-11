@@ -21,15 +21,15 @@ def create_app():
 
     # CORS
     CORS(
-        app,
-        supports_credentials=True,
-        resources={r"/*": {"origins": [
-            "http://localhost:5173",
-            "https://stop-the-cap.vercel.app",
-            "https://stop-the-cap-vlxv-gxebgegof-reuben-40s-projects.vercel.app"
-        ]}},
-        allow_headers=["Content-Type", "Authorization"]
-    )
+    app,
+    supports_credentials=True,
+    resources={r"/*": {"origins": [
+        "http://localhost:5173",
+        "https://stop-the-cap-vlxv.vercel.app",           # ✅ your actual URL
+        "https://stop-the-cap.vercel.app",                 # keep as fallback
+    ]}},
+    allow_headers=["Content-Type", "Authorization"]
+)
 
     # DB setup
     os.makedirs(app.instance_path, exist_ok=True)
