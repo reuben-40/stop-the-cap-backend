@@ -14,30 +14,32 @@ DB_NAME = "database.db"
 def create_app():
     app = Flask(__name__)
 
-    # JWT config
+    # ── JWT config ────────────────────────────────────────────────────────────
     app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY", "samba-super-secret-jwt-key-32chars!")
     app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)
     app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=30)
 
-    # CORS
+    # ── CORS ──────────────────────────────────────────────────────────────────
     CORS(
-    app,
-    supports_credentials=True,
-    resources={r"/*": {"origins": [
-        "http://localhost:5173",
-        "https://stop-the-cap-vlxv.vercel.app",           # ✅ your actual URL
-        "https://stop-the-cap.vercel.app",                 # keep as fallback
-    ]}},
-    allow_headers=["Content-Type", "Authorization"]
-)
+        app,
+        supports_credentials=True,
+        resources={r"/*": {"origins": [
+            "http://localhost:5173",
+            "https://stop-the-cap-vlxv.vercel.app",
+            "https://stop-the-cap.vercel.app",
+        ]}},
+        allow_headers=["Content-Type", "Authorization"],
+        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        expose_headers=["Authorization"],
+    )
 
-    # DB setup
+    # ── DB setup ──────────────────────────────────────────────────────────────
     os.makedirs(app.instance_path, exist_ok=True)
     db_path = os.path.join(app.instance_path, DB_NAME)
     app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{db_path}"
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-    # Mail config — Brevo SMTP
+    # ── Mail config — Brevo SMTP ──────────────────────────────────────────────
     app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "samba16@123")
     app.config["MAIL_SERVER"] = "smtp-relay.brevo.com"
     app.config["MAIL_PORT"] = 587
@@ -47,12 +49,12 @@ def create_app():
     app.config["MAIL_PASSWORD"] = os.environ.get("MAIL_PASSWORD")
     app.config["MAIL_DEFAULT_SENDER"] = ("Samba Health Outreach", "sambahomehealthcare@gmail.com")
 
-    # Init extensions
+    # ── Init extensions ───────────────────────────────────────────────────────
     db.init_app(app)
     mail.init_app(app)
     JWTManager(app)
 
-    # Blueprints
+    # ── Blueprints ────────────────────────────────────────────────────────────
     from .views import views
     from .auth import auth
 

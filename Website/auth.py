@@ -9,7 +9,7 @@ from flask_jwt_extended import (
     get_jwt_identity,
 )
 from .models import User, Appointment
-from . import db, mail  # ✅ import mail from __init__.py
+from . import db, mail
 
 auth = Blueprint("auth", __name__)
 
@@ -41,8 +41,12 @@ Samba Health Outreach
 
 # ── auth routes ───────────────────────────────────────────────────────────────
 
-@auth.route("/api/sign-up", methods=["POST"])
+# FIX: was "/api/sign-up" — renamed to "/api/signUp" to match frontend calls
+@auth.route("/api/signUp", methods=["POST", "OPTIONS"])
 def sign_up():
+    if request.method == "OPTIONS":
+        return jsonify({}), 200
+
     data = request.get_json()
 
     first_name     = data.get("firstName")
@@ -83,8 +87,11 @@ def sign_up():
     }), 201
 
 
-@auth.route("/api/login", methods=["POST"])
+@auth.route("/api/login", methods=["POST", "OPTIONS"])
 def login():
+    if request.method == "OPTIONS":
+        return jsonify({}), 200
+
     data = request.get_json()
 
     email    = data.get("email")
@@ -115,14 +122,18 @@ def login():
     }), 200
 
 
-@auth.route("/api/logout", methods=["POST"])
+@auth.route("/api/logout", methods=["POST", "OPTIONS"])
 def logout():
+    if request.method == "OPTIONS":
+        return jsonify({}), 200
     return jsonify({"status": "Logged out successfully"}), 200
 
 
-@auth.route("/api/refresh", methods=["POST"])
+@auth.route("/api/refresh", methods=["POST", "OPTIONS"])
 @jwt_required(refresh=True)
 def refresh():
+    if request.method == "OPTIONS":
+        return jsonify({}), 200
     identity     = get_jwt_identity()
     access_token = create_access_token(identity=identity)
     return jsonify({"access_token": access_token}), 200
@@ -130,9 +141,12 @@ def refresh():
 
 # ── appointment routes ────────────────────────────────────────────────────────
 
-@auth.route("/appointments", methods=["POST"])
+@auth.route("/appointments", methods=["POST", "OPTIONS"])
 @jwt_required()
 def create_appointment():
+    if request.method == "OPTIONS":
+        return jsonify({}), 200
+
     data = request.get_json()
 
     if not data.get("date") or not data.get("day") or not data.get("time"):
@@ -150,7 +164,6 @@ def create_appointment():
     db.session.add(new_appointment)
     db.session.commit()
 
-    # ✅ Send confirmation email
     email_sent = False
     if user:
         try:
@@ -175,9 +188,12 @@ def create_appointment():
     }), 201
 
 
-@auth.route("/appointments", methods=["GET"])
+@auth.route("/appointments", methods=["GET", "OPTIONS"])
 @jwt_required()
 def get_appointments():
+    if request.method == "OPTIONS":
+        return jsonify({}), 200
+
     user_id      = int(get_jwt_identity())
     appointments = Appointment.query.filter_by(user_id=user_id).all()
 
@@ -197,9 +213,12 @@ def get_appointments():
     ]), 200
 
 
-@auth.route("/appointments/<int:id>", methods=["DELETE"])
+@auth.route("/appointments/<int:id>", methods=["DELETE", "OPTIONS"])
 @jwt_required()
 def delete_appointment(id):
+    if request.method == "OPTIONS":
+        return jsonify({}), 200
+
     user_id     = int(get_jwt_identity())
     appointment = Appointment.query.filter_by(id=id, user_id=user_id).first()
 
@@ -214,9 +233,12 @@ def delete_appointment(id):
 
 # ── me ────────────────────────────────────────────────────────────────────────
 
-@auth.route("/api/me", methods=["GET"])
+@auth.route("/api/me", methods=["GET", "OPTIONS"])
 @jwt_required()
 def me():
+    if request.method == "OPTIONS":
+        return jsonify({}), 200
+
     user_id = int(get_jwt_identity())
     user    = User.query.get(user_id)
 
