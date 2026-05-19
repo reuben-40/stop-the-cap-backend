@@ -5,6 +5,7 @@ from flask_jwt_extended import JWTManager
 from flask_mail import Mail
 from datetime import timedelta
 import os
+import re  # ← required for regex CORS origin matching
 
 db = SQLAlchemy()
 mail = Mail()
@@ -25,8 +26,8 @@ def create_app():
         supports_credentials=True,
         resources={r"/*": {"origins": [
             "http://localhost:5173",
-            "https://stop-the-cap-vlxv.vercel.app",
-            "https://stop-the-cap.vercel.app",
+            "https://stop-the-cap-vlxv.vercel.app",               # production URL
+            re.compile(r"https://stop-the-cap.*\.vercel\.app"),    # all preview URLs
         ]}},
         allow_headers=["Content-Type", "Authorization"],
         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],

@@ -41,7 +41,6 @@ Samba Health Outreach
 
 # ── auth routes ───────────────────────────────────────────────────────────────
 
-# FIX: was "/api/sign-up" — renamed to "/api/signUp" to match frontend calls
 @auth.route("/api/signUp", methods=["POST", "OPTIONS"])
 def sign_up():
     if request.method == "OPTIONS":
@@ -153,7 +152,7 @@ def create_appointment():
         return jsonify({"message": "Please fill all fields"}), 400
 
     user_id = int(get_jwt_identity())
-    user    = User.query.get(user_id)
+    user    = db.session.get(User, user_id)  # FIX: replaced deprecated User.query.get()
 
     new_appointment = Appointment(
         date=data["date"],
@@ -240,7 +239,7 @@ def me():
         return jsonify({}), 200
 
     user_id = int(get_jwt_identity())
-    user    = User.query.get(user_id)
+    user    = db.session.get(User, user_id)  # FIX: replaced deprecated User.query.get()
 
     if not user:
         return jsonify({"loggedIn": False}), 401
