@@ -25,6 +25,7 @@ def create_app():
         supports_credentials=True,
         resources={r"/*": {"origins": [
             "http://localhost:5173",
+            "https://stop-the-cap.onrender.com"
             "https://stop-the-cap-vlxv.vercel.app",
             re.compile(r"https://stop-the-cap.*\.vercel\.app"),
         ]}},
