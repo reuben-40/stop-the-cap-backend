@@ -5,11 +5,10 @@ from flask_jwt_extended import JWTManager
 from flask_mail import Mail
 from datetime import timedelta
 import os
-import re  # ← required for regex CORS origin matching
+import re
 
 db = SQLAlchemy()
 mail = Mail()
-DB_NAME = "database.db"
 
 
 def create_app():
@@ -26,8 +25,8 @@ def create_app():
         supports_credentials=True,
         resources={r"/*": {"origins": [
             "http://localhost:5173",
-            "https://stop-the-cap-vlxv.vercel.app",               # production URL
-            re.compile(r"https://stop-the-cap.*\.vercel\.app"),    # all preview URLs
+            "https://stop-the-cap-vlxv.vercel.app",
+            re.compile(r"https://stop-the-cap.*\.vercel\.app"),
         ]}},
         allow_headers=["Content-Type", "Authorization"],
         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -35,9 +34,10 @@ def create_app():
     )
 
     # ── DB setup ──────────────────────────────────────────────────────────────
-    os.makedirs(app.instance_path, exist_ok=True)
-    db_path = os.path.join(app.instance_path, DB_NAME)
-    app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{db_path}"
+    database_url = os.environ.get("DATABASE_URL", "")
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     # ── Mail config — Brevo SMTP ──────────────────────────────────────────────
