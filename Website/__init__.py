@@ -27,7 +27,8 @@ def create_app():
          ],
          supports_credentials=True,
          allow_headers=["Content-Type", "Authorization"],
-         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+         rexources={r"/*": {}}
     )
 
     # ── DB setup ──────────────────────────────────────────────────────────────
@@ -36,6 +37,13 @@ def create_app():
         database_url = database_url.replace("postgres://", "postgresql://", 1)
     app.config["SQLALCHEMY_DATABASE_URI"] = database_url
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "pool_pre_ping": True,
+        "pool_recycle": 300,
+        "pool_timeout": 20,
+        "pool_size": 5,
+        "max_overflow": 2,
+    }
 
     # ── Mail config — Brevo SMTP ──────────────────────────────────────────────
     app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "samba16@123")
