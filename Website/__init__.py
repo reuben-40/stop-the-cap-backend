@@ -5,7 +5,6 @@ from flask_jwt_extended import JWTManager
 from flask_mail import Mail
 from datetime import timedelta
 import os
-import re
 
 db = SQLAlchemy()
 mail = Mail()
@@ -20,18 +19,15 @@ def create_app():
     app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=30)
 
     # ── CORS ──────────────────────────────────────────────────────────────────
-    CORS(
-        app,
-        supports_credentials=True,
-        resources={r"/*": {"origins": [
-            "http://localhost:5173",
-            "https://stop-the-cap.onrender.com"
-            "https://stop-the-cap-vlxv.vercel.app",
-            re.compile(r"https://stop-the-cap.*\.vercel\.app"),
-        ]}},
-        allow_headers=["Content-Type", "Authorization"],
-        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        expose_headers=["Authorization"],
+    CORS(app,
+         origins=[
+             "http://localhost:5173",
+             "https://stop-the-cap.onrender.com",
+             "https://stop-the-cap-vlxv.vercel.app",
+         ],
+         supports_credentials=True,
+         allow_headers=["Content-Type", "Authorization"],
+         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
     )
 
     # ── DB setup ──────────────────────────────────────────────────────────────
